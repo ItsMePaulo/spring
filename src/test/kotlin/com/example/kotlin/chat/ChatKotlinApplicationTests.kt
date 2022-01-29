@@ -43,6 +43,9 @@ class ChatKotlinApplicationTests {
 
     val now: Instant = Instant.now()
 
+    fun Message.prepareForTesting() = copy(id = null, sent = sent.truncatedTo(MILLIS))
+    fun MessageVM.prepareForTesting() = copy(id = null, sent = sent.truncatedTo(MILLIS))
+
     @BeforeEach
     fun setup() {
         val secondBeforeNow = now.minusSeconds(1)
@@ -59,14 +62,14 @@ class ChatKotlinApplicationTests {
                 ),
                 Message(
                     content = "**testMessage2**",
-                    contentType = ContentType.PLAIN,
+                    contentType = ContentType.MARKDOWN,
                     sent = secondBeforeNow,
                     username = "test1",
                     userAvatarImageLink = "http://test.com"
                 ),
                 Message(
                     content = "`testMessage3`",
-                    contentType = ContentType.PLAIN,
+                    contentType = ContentType.MARKDOWN,
                     sent = now,
                     username = "test2",
                     userAvatarImageLink = "http://test.com"
@@ -93,7 +96,7 @@ class ChatKotlinApplicationTests {
         ).body
 
         if (!withLastMessageId) {
-            assertThat(messages?.map { with(it) { copy(id = null, sent = sent.truncatedTo(MILLIS)) } })
+            assertThat(messages?.map { it.prepareForTesting() })
                 .first()
                 .isEqualTo(
                     MessageVM(
@@ -104,15 +107,15 @@ class ChatKotlinApplicationTests {
                 )
         }
 
-        assertThat(messages?.map { with(it) { copy(id = null, sent = sent.truncatedTo(MILLIS)) } })
+        assertThat(messages?.map { it.prepareForTesting() })
             .containsSubsequence(
                 MessageVM(
-                    "**testMessage2**",
+                    "<body><p><strong>testMessage2</strong></p></body>",
                     UserVM("test1", URL("http://test.com")),
                     now.minusSeconds(1).truncatedTo(MILLIS)
                 ),
                 MessageVM(
-                    "`testMessage3`",
+                    "<body><p><code>testMessage3</code></p></body>",
                     UserVM("test2", URL("http://test.com")),
                     now.truncatedTo(MILLIS)
                 )
@@ -133,11 +136,11 @@ class ChatKotlinApplicationTests {
         messageRepository.findAll()
             .first { it.content.contains("HelloWorld") }
             .apply {
-                assertThat(this.copy(id = null, sent = sent.truncatedTo(MILLIS)))
+                assertThat(prepareForTesting())
                     .isEqualTo(
                         Message(
                             content = "`HelloWorld`",
-                            contentType = ContentType.PLAIN,
+                            contentType = ContentType.MARKDOWN,
                             sent = now.plusSeconds(1).truncatedTo(MILLIS),
                             username =  "test",
                             userAvatarImageLink =  "http://test.com"

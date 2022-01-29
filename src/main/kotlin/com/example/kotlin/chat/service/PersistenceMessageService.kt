@@ -1,11 +1,10 @@
 package com.example.kotlin.chat.service
 
-import com.example.kotlin.chat.repository.ContentType
-import com.example.kotlin.chat.repository.Message
 import com.example.kotlin.chat.repository.MessageRepository
+import com.example.kotlin.chat.toMessage
+import com.example.kotlin.chat.toMessageVms
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
-import java.net.URL
 
 @Service
 @Primary
@@ -14,34 +13,13 @@ class PersistenceMessageService(
 ) : MessageService {
 
     override fun latest(): List<MessageVM> =
-        messageRepository.findLatest().map(this::convertMessageToMessageVm)
+        messageRepository.findLatest().toMessageVms()
 
     override fun after(messageId: String): List<MessageVM> =
-        messageRepository.findLatest(messageId).map(this::convertMessageToMessageVm)
+        messageRepository.findLatest(messageId).toMessageVms()
 
 
     override fun post(message: MessageVM) {
-        messageRepository.save(convertMessageVmToMessage(message))
+        messageRepository.save(message.toMessage())
     }
-
-    private fun convertMessageToMessageVm(message: Message): MessageVM =
-        with(message) {
-            MessageVM(
-                content = content,
-                UserVM(username, URL(userAvatarImageLink)),
-                sent = sent,
-                id = id
-            )
-    }
-
-    private fun convertMessageVmToMessage(messageVM: MessageVM) : Message =
-        with(messageVM) {
-            Message(
-                content = content,
-                contentType = ContentType.PLAIN,
-                sent = sent,
-                username = user.name,
-                userAvatarImageLink = user.avatarImageLink.toString()
-            )
-        }
 }

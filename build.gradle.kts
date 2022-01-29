@@ -31,6 +31,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
 	runtimeOnly("com.h2database:h2")
 
+	implementation("org.jetbrains:markdown:0.2.4")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
