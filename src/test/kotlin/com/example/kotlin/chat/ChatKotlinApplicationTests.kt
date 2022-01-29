@@ -6,6 +6,8 @@ import com.example.kotlin.chat.repository.MessageRepository
 import com.example.kotlin.chat.service.MessageVM
 import com.example.kotlin.chat.service.UserVM
 import com.github.javafaker.Bool
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -48,40 +50,44 @@ class ChatKotlinApplicationTests {
 
     @BeforeEach
     fun setup() {
-        val secondBeforeNow = now.minusSeconds(1)
-        val twoSecondsBeforeNow = secondBeforeNow.minusSeconds(1)
+        runBlocking {
+            val secondBeforeNow = now.minusSeconds(1)
+            val twoSecondsBeforeNow = secondBeforeNow.minusSeconds(1)
 
-        val savedMessages = messageRepository.saveAll(
-            listOf(
-                Message(
-                    content = "*testMessage*",
-                    contentType = ContentType.PLAIN,
-                    sent = twoSecondsBeforeNow,
-                    username = "test",
-                    userAvatarImageLink = "http://test.com"
-                ),
-                Message(
-                    content = "**testMessage2**",
-                    contentType = ContentType.MARKDOWN,
-                    sent = secondBeforeNow,
-                    username = "test1",
-                    userAvatarImageLink = "http://test.com"
-                ),
-                Message(
-                    content = "`testMessage3`",
-                    contentType = ContentType.MARKDOWN,
-                    sent = now,
-                    username = "test2",
-                    userAvatarImageLink = "http://test.com"
+            val savedMessages = messageRepository.saveAll(
+                listOf(
+                    Message(
+                        content = "*testMessage*",
+                        contentType = ContentType.PLAIN,
+                        sent = twoSecondsBeforeNow,
+                        username = "test",
+                        userAvatarImageLink = "http://test.com"
+                    ),
+                    Message(
+                        content = "**testMessage2**",
+                        contentType = ContentType.MARKDOWN,
+                        sent = secondBeforeNow,
+                        username = "test1",
+                        userAvatarImageLink = "http://test.com"
+                    ),
+                    Message(
+                        content = "`testMessage3`",
+                        contentType = ContentType.MARKDOWN,
+                        sent = now,
+                        username = "test2",
+                        userAvatarImageLink = "http://test.com"
+                    )
                 )
             )
-        )
-        lastMessageId = savedMessages.first().id ?: ""
+            lastMessageId = savedMessages.first().id ?: ""
+        }
     }
 
     @AfterEach
     fun tearDown() {
-        messageRepository.deleteAll()
+        runBlocking {
+            messageRepository.deleteAll()
+        }
     }
 
     @ParameterizedTest
@@ -124,28 +130,30 @@ class ChatKotlinApplicationTests {
 
     @Test
     fun `test that messages posted to the API is stored`() {
-        client.postForEntity<Any>(
-            URI("/api/v1/messages"),
-            MessageVM(
-                "`HelloWorld`",
-                UserVM("test", URL("http://test.com")),
-                now.plusSeconds(1)
+        runBlocking {
+            client.postForEntity<Any>(
+                URI("/api/v1/messages"),
+                MessageVM(
+                    "`HelloWorld`",
+                    UserVM("test", URL("http://test.com")),
+                    now.plusSeconds(1)
+                )
             )
-        )
 
-        messageRepository.findAll()
-            .first { it.content.contains("HelloWorld") }
-            .apply {
-                assertThat(prepareForTesting())
-                    .isEqualTo(
-                        Message(
-                            content = "`HelloWorld`",
-                            contentType = ContentType.MARKDOWN,
-                            sent = now.plusSeconds(1).truncatedTo(MILLIS),
-                            username =  "test",
-                            userAvatarImageLink =  "http://test.com"
+            messageRepository.findAll()
+                .first { it.content.contains("HelloWorld") }
+                .apply {
+                    assertThat(prepareForTesting())
+                        .isEqualTo(
+                            Message(
+                                content = "`HelloWorld`",
+                                contentType = ContentType.MARKDOWN,
+                                sent = now.plusSeconds(1).truncatedTo(MILLIS),
+                                username = "test",
+                                userAvatarImageLink = "http://test.com"
+                            )
                         )
-                    )
-            }
+                }
+        }
     }
 }

@@ -12,14 +12,14 @@ class PersistenceMessageService(
     private val messageRepository: MessageRepository
 ) : MessageService {
 
-    override fun latest(): List<MessageVM> =
+    override suspend fun latest(): List<MessageVM> =
         messageRepository.findLatest().toMessageVms()
 
-    override fun after(messageId: String): List<MessageVM> =
+    override suspend fun after(messageId: String): List<MessageVM> =
         messageRepository.findLatest(messageId).toMessageVms()
 
 
-    override fun post(message: MessageVM) {
+    override suspend fun post(message: MessageVM) {
         messageRepository.save(message.toMessage())
     }
 }
